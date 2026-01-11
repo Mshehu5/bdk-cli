@@ -1346,10 +1346,13 @@ pub async fn broadcast_transaction(
 
         #[cfg(feature = "cbf")]
         KyotoClient { client } => {
+            use bdk_kyoto::{TxBroadcast, TxBroadcastPolicy};
+
             let txid = tx.compute_txid();
+            let tx_broadcast = TxBroadcast::new(tx.clone(), TxBroadcastPolicy::AllPeers);
             let wtxid = client
                 .requester
-                .broadcast_random(tx.clone())
+                .broadcast_tx(tx_broadcast)
                 .await
                 .map_err(|_| {
                     tracing::warn!("Broadcast was unsuccessful");

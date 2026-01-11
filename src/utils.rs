@@ -222,12 +222,19 @@ pub(crate) fn new_blockchain_client(
         #[cfg(feature = "cbf")]
         ClientType::Cbf => {
             let scan_type = Sync;
-            let builder = Builder::new(_wallet.network());
-
-            let light_client = builder
+            let mut builder = Builder::new(_wallet.network())
                 .required_peers(wallet_opts.compactfilter_opts.conn_count)
-                .data_dir(&_datadir)
-                .build_with_wallet(_wallet, scan_type)?;
+                .data_dir(&_datadir);
+
+            // Add trusted peer if from command line input --cbf-peer 127.0.0.1
+            if let Some(peer_ip) = wallet_opts.compactfilter_opts.peer {
+                use bdk_kyoto::TrustedPeer;
+
+                let trusted_peer = TrustedPeer::from_ip(peer_ip);
+                builder = builder.add_peer(trusted_peer);
+            }
+
+            let light_client = builder.build_with_wallet(_wallet, scan_type)?;
 
             let LightClient {
                 requester,
